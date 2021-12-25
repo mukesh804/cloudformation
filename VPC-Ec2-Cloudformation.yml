@@ -1,0 +1,119 @@
+Resources:
+    MyVpc1:
+        Type:  AWS::EC2::VPC
+        Properties:
+           CidrBlock: 192.0.0.0/16
+           Tags:
+            - Key: Name
+              Value: Prod-VPC
+        
+    MySubnet1:
+        Type: AWS::EC2::Subnet
+        Properties:
+           CidrBlock: 192.0.1.0/24
+           VpcId:
+              Ref: MyVpc1
+           MapPublicIpOnLaunch: true
+           AvailabilityZone: ap-south-1a
+           Tags:
+            - Key: Name
+              Value: Subnet1
+    
+    MySubnet2:
+        Type: AWS::EC2::Subnet
+        Properties:
+           CidrBlock: 192.0.2.0/24
+           VpcId:
+              Ref: MyVpc1
+           AvailabilityZone: ap-south-1b
+           Tags:
+            - Key: Name
+              Value: Subnet2
+ 
+    MyIGWProd:
+        Type: AWS::EC2::InternetGateway
+        Properties:
+           Tags:
+            - Key: Name
+              Value: Prod_IGW
+
+    VPCGatewayAttach:
+        Type: AWS::EC2::VPCGatewayAttachment
+        Properties:
+            InternetGatewayId:
+               Ref: MyIGWProd
+            VpcId:
+               Ref: MyVpc1
+             
+    PublicRouteTable:
+        Type: AWS::EC2::RouteTable
+        Properties:
+            VpcId:
+               Ref: MyVpc1
+            Tags:
+             - Key: Name
+               Value: Prod_Public_Route
+    
+    PublicRoute:
+        Type: AWS::EC2::Route
+        Properties:
+            GatewayId:
+               Ref: MyIGWProd
+            DestinationCidrBlock: 0.0.0.0/0
+            RouteTableId: 
+                Ref: PublicRouteTable
+    
+    PublicSubnetAssociation:
+        Type: AWS::EC2::SubnetRouteTableAssociation
+        Properties:
+            RouteTableId:
+                Ref: PublicRouteTable
+            SubnetId:
+                Ref: MySubnet1            
+     
+    MySecGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+            GroupDescription: Security Group Rules
+            VpcId:
+               Ref: MyVpc1     
+            SecurityGroupIngress:
+             - IpProtocol: -1
+               CidrIp: 0.0.0.0/0
+            SecurityGroupEgress:
+             - IpProtocol: -1
+               CidrIp: 0.0.0.0/0
+            Tags:
+             - Key: Name
+               Value: Prod-SG             
+ 
+     
+    ProdEc21:
+        Type: AWS::EC2::Instance
+        Properties:
+            ImageId: ami-052cef05d01020f1d
+            AvailabilityZone: ap-south-1a
+            SubnetId:
+                Ref: MySubnet1
+            InstanceType: t2.micro
+            SecurityGroupIds:
+                - !GetAtt "MySecGroup.GroupId"
+            KeyName: cloud
+            Tags:
+             - Key: Name
+               Value: Webserver
+               
+    ProdEc22:
+        Type: AWS::EC2::Instance
+        Properties:
+            ImageId: ami-052cef05d01020f1d
+            AvailabilityZone: ap-south-1b
+            SubnetId:
+                Ref: MySubnet2
+            InstanceType: t2.micro
+            SecurityGroupIds:
+                - !GetAtt "MySecGroup.GroupId"
+            KeyName: cloud
+            Tags:
+             - Key: Name
+               Value: DBServer
