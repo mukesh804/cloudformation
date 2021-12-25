@@ -1,1 +1,1 @@
-# AWS Basic Architucture With Cloudformation
+# AWS Basic Architecture With Cloudformation
